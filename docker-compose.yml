@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  postgres-infinitypay:
+    image: postgres:16
+    container_name: infinitypay
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123mudar
+      POSTGRES_DB: postgres-infinitypay
+    volumes:
+      - postgres-infinitypay:/var/lib/postgresql/data
+
+volumes:
+  postgres-infinitypay:
