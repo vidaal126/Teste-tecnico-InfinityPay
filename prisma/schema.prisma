@@ -8,12 +8,12 @@ datasource db {
 }
 
 model Users {
-  user_id  Int     @id @default(autoincrement())
+  user_id  Int          @id @default(autoincrement())
   name     String
-  email    String  @unique
+  email    String       @unique
   password String
-  tasks    Tasks[] 
-  role     Role    @default(EMPLOYEE) 
+  tasks    UsersTasks[]
+  role     Role         @default(EMPLOYEE)
 }
 
 model Tasks {
@@ -23,7 +23,17 @@ model Tasks {
   status      Status   @default(PENDING)
   dead_line   DateTime
   user_id     Int
-  user        Users    @relation(fields: [user_id], references: [user_id])
+
+  users UsersTasks[]
+}
+
+model UsersTasks {
+  user    Users @relation(fields: [user_id], references: [user_id])
+  user_id Int
+  task    Tasks @relation(fields: [task_id], references: [task_id])
+  task_id Int
+
+  @@id([user_id, task_id])
 }
 
 enum Status {

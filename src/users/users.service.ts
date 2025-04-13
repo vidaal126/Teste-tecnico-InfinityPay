@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { hashPassword } from 'utils/bcrypt';
 import { Role } from '@prisma/client';
 import { FindUserDto } from './dto/find-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -51,11 +52,14 @@ export class UsersService {
       };
     }
   }
+
   async findUser(findUserDto: FindUserDto) {
     try {
-      const foundUser = await this.prisma.users.findUnique({
-        where: { email: findUserDto.email },
-        omit: { password: true, user_id: true },
+      const foundUser = await this.prisma.users.findFirst({
+        where: {
+          OR: [{ email: findUserDto.email }, { user_id: findUserDto.user_id }],
+        },
+        // omit: { password: true, user_id: true },
       });
 
       if (!foundUser) {
@@ -77,6 +81,54 @@ export class UsersService {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  }
+  async updateUserRole(updateUserDto: UpdateUserDto) {
+    try {
+      const existsUser = await this.findUser({
+        user_id: updateUserDto.user_id,
+      });
+
+      if (!existsUser.success) {
+        return {
+          message: existsUser.message,
+          success: existsUser.success,
+          status: existsUser.status,
+        };
+      }
+
+      if (existsUser.data?.role == updateUserDto.role) {
+        return {
+          message: 'Usuário já tem esse cargo',
+          success: false,
+          status: HttpStatus.CONFLICT,
+        };
+      }
+
+      const updatedUserRole = await this.prisma.users.update({
+        where: { user_id: updateUserDto.user_id },
+        data: {
+          role: updateUserDto.role,
+        },
+        omit: { password: true, email: true, user_id: true },
+      });
+
+      return {
+        message: 'Usuário agora é um gerente',
+        success: true,
+        status: HttpStatus.OK,
+        updatedUserRole,
+      };
+    } catch (error) {
+      return {
+        message: 'Ocorreu um erro ao buscar no banco de dados',
+        success: false,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Ocorreu um erro ao salvar no banco',
       };
     }
   }
